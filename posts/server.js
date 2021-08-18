@@ -16,6 +16,7 @@ app.use(cors());
 
 //Read route
 app.get("/posts", (req, res) => {
+  //send response all posts data
   res.send(posts);
 });
 
@@ -31,7 +32,7 @@ app.post("/posts", async (req, res) => {
     title,
   };
   //Send Post Created Data to event-bus
-  await axios.post("http://localhost:4003/events", {
+  await axios.post("http://localhost:4004/events", {
     type: "PostCreated",
     data: {
       id,
@@ -42,7 +43,7 @@ app.post("/posts", async (req, res) => {
   res.status(201).send(posts[id]);
 });
 
-//Post request from event-bus
+//Handle post request from event-bus
 app.post("/events", (req, res) => {
   console.log("Event received :", req.body.type);
   res.send({});

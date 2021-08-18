@@ -21,28 +21,50 @@ app.get("/posts/:id/comments", (req, res) => {
 
 //Create route (comments)
 app.post("/posts/:id/comments", async (req, res) => {
+  //generate random if from randomBytes
   const commentId = randomBytes(4).toString("hex");
+  //destruture content created from frontend blog request
   const { content } = req.body;
-  console.log(content);
+  //create comment contain post id
   const comments = commentsByPostId[req.params.id] || [];
-  comments.push({ id: commentId, content });
+  //push new comment to comments array
+  comments.push({ id: commentId, content, status: "pending" });
+  //
   commentsByPostId[req.params.id] = comments;
 
   //Send comments data to event-bus
-  await axios.post("http://localhost:4003/events", {
+  await axios.post("http://localhost:4004/events", {
     type: "CommentCreated",
     data: {
       id: commentId,
       content,
       postId: req.params.id,
+      status: "pending",
     },
   });
   res.status(201).send(comments);
 });
 
-//Post request from event-bus
-app.post("/events", (req, res) => {
+//handle post request from event-bus
+app.post("/events", async (req, res) => {
   console.log("Event received :", req.body.type);
+  const { type, data } = req.body;
+  if (type === "CommentModerated") {
+    const { postId, id, status, content } = data;
+    const comments = commentsByPostId[postId];
+    const comment = comments.find((comment) => comment.id === id);
+    comment.status = status;
+    comment.content = content;
+    await axios.post("http://localhost:4004/events", {
+      type: "CommentUpdated",
+      data: {
+        id,
+        status,
+        content,
+        postId,
+      },
+    });
+  }
   res.send({});
 });
 

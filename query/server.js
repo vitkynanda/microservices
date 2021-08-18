@@ -1,6 +1,5 @@
 //Dependencies
 const express = require("express");
-const axios = require("axios");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
@@ -24,7 +23,7 @@ app.post("/events", (req, res) => {
   //Destructure to get type and data from the event request
   const { type, data } = req.body;
 
-  //if event type post push data to array posts
+  //if event type post, push data to array posts
   if (type === "PostCreated") {
     //Destructure to get id and title from the data
     const { id, title } = data;
@@ -32,14 +31,28 @@ app.post("/events", (req, res) => {
     posts[id] = { id, title, comments: [] };
   }
 
-  //if event type comment push data to array comments
+  //if event type comment, push data to array comments
   if (type === "CommentCreated") {
     //Destructure to get id, content, postId from the event
-    const { id, content, postId } = data;
+    const { id, content, postId, status } = data;
     //push comment created to array comments
     const post = posts[postId];
-    post.comments.push({ id, content });
+    post.comments.push({ id, content, status });
   }
+
+  //if event type comment update, update comments array data
+  if (type === "CommentUpdated") {
+    //Destructure to get id, content, postId from the event
+    const { id, postId, content, status } = data;
+    //take post with the postId
+    const post = posts[postId];
+    //take comment with the comment id
+    const comment = post.comments.find((comment) => comment.id === id);
+    //update comment status and content
+    comment.status = status;
+    comment.content = content;
+  }
+
   res.send({});
 });
 
